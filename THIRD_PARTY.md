@@ -48,6 +48,23 @@ Subclasses the vendored `ScalSeq` and rebuilds its two input projections for the
 actual P4/P5 widths. Everything else (3D conv, BN, LeakyReLU, 3D max-pool over
 the scale axis) is inherited unchanged.
 
+## `src/modules/lsk.py` — written here, no code copied
+
+The [zcablii/LSKNet](https://github.com/zcablii/LSKNet) repository (IJCV 2024
+"LSKNet: A Foundation Lightweight Backbone for Remote Sensing",
+[arXiv:2403.11735](https://arxiv.org/abs/2403.11735)) is under
+**CC BY-NC 4.0 (non-commercial)**, so its backbone code
+(`mmrotate/models/backbones/lsknet.py`: `LSKblock`, `Attention`, `Block`,
+`Mlp`, `DWConv`) is **not vendored**. This module is a clean-room
+reimplementation of the paper's selective-kernel mechanism (5x5 depthwise +
+7x7 dilated-3 depthwise, half-width projections, avg/max scale pooling, 7x7
+squeeze + sigmoid selection) and its `Block` stage wrapper (BatchNorm,
+1x1-GELU attention, 1x1-DW3x3-GELU-1x1 MLP, 1e-2 layer scales), with own
+naming/structure, no `mmcv`/`timm` dependencies (inline stochastic depth),
+and a `(c1, c2)` constructor that enforces channel preservation for
+`parse_model`. Anyone using the trained LSK-variant weights commercially
+should check the upstream non-commercial terms.
+
 ## Checked, not vendored
 
 [oracl4/RoadDamageDetection](https://github.com/oracl4/RoadDamageDetection) has no

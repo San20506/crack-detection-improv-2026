@@ -28,6 +28,7 @@ data/rdd2022-cn/images/*/*
 data/rdd2022-cn/labels/*/*
 !data/rdd2022-cn/images/*/.gitkeep
 !data/rdd2022-cn/labels/*/.gitkeep
+data/e
 
 # Upstream RDD2022 release archive (multi-GB); fetch from the links in README.md
 *.zip

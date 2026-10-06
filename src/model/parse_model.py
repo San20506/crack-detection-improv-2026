@@ -79,6 +79,7 @@ from ultralytics.utils import LOGGER, colorstr, emojis
 from ultralytics.utils.ops import make_divisible
 
 from ..modules.c2f_faster import C2f_Faster
+from ..modules.lsk import LSKBlock
 from ..modules.spd import SPDConv
 from ..modules.ssff import ScaleSequenceFusion
 from ..vendor.asf_yolo_blocks import Add, DownSample, Zoom_cat
@@ -165,6 +166,7 @@ def parse_model(d, ch, verbose=True):
             SPDConv,
             DownSample,
             C2f_Faster,
+            LSKBlock,
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -340,7 +342,7 @@ def install() -> Any:
     from ultralytics.nn import tasks
 
     previous = tasks.parse_model
-    for cls in (SPDConv, C2f_Faster, Add, DownSample, Zoom_cat, ScaleSequenceFusion):
+    for cls in (SPDConv, C2f_Faster, LSKBlock, Add, DownSample, Zoom_cat, ScaleSequenceFusion):
         setattr(tasks, cls.__name__, cls)
     tasks.parse_model = parse_model
     return previous

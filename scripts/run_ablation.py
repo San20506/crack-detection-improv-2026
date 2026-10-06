@@ -74,8 +74,9 @@ from src.modules.wiou import install_wiou
 from src.checkpoint import checkpoint_every, CKPT_DIRNAME
 from ultralytics import YOLO
 
-arm, use_wiou, project, epochs, every = (
-    sys.argv[1], sys.argv[2] == "1", sys.argv[3], int(sys.argv[4]), int(sys.argv[5]))
+arm, use_wiou, project, epochs, every, init, data = (
+    sys.argv[1], sys.argv[2] == "1", sys.argv[3], int(sys.argv[4]),
+    int(sys.argv[5]), sys.argv[6], sys.argv[7])
 run_dir = pathlib.Path(project) / arm
 
 # Prefer the newest periodic snapshot over last.pt: if the machine died mid-epoch,
@@ -88,16 +89,24 @@ if not resume_from.exists():
 if use_wiou:
     install_wiou("v1")   # must precede criterion construction, also on resume
 
-model = YOLO(str(resume_from)) if resume_from else YOLO(f"models/arms/yolov8s-{arm}.yaml").load("weights/yolov8s.pt")
 if resume_from:
+    model = YOLO(str(resume_from))
     print(f"RESUME {arm} from {resume_from}", flush=True)
+elif init == "scratch":
+    # Paper-faithful: the paper never mentions COCO pretraining, so build
+    # from the yaml with random init instead of transferring COCO weights.
+    model = YOLO(f"models/arms/yolov8s-{arm}.yaml")
+    print(f"SCRATCH {arm} from yaml (no COCO weights)", flush=True)
+else:
+    model = YOLO(f"models/arms/yolov8s-{arm}.yaml").load("weights/yolov8s.pt")
+    print(f"COCO-INIT {arm} from weights/yolov8s.pt", flush=True)
 model.add_callback("on_train_epoch_end", checkpoint_every(every))
 
 if resume_from:
     model.train(resume=True, device=0)   # settings come from the checkpoint
 else:
     model.train(
-        data="data/rdd2022-cn.yaml", epochs=epochs, imgsz=640, batch=4, workers=2,
+        data=data, epochs=epochs, imgsz=640, batch=4, workers=2,
         optimizer="SGD", lr0=0.01, lrf=0.01, device=0, channels_last=False,
         project=project, name=arm, exist_ok=True, verbose=False,
     )
@@ -153,9 +162,20 @@ def main():
     ap.add_argument("--max-vram-mib", type=float, default=4096.0,
                     help="keep total GPU memory.used under this (nvidia-smi MiB); "
                          "refuse to start another run above it")
+    ap.add_argument("--init", choices=["coco", "scratch"], default="coco",
+                    help="coco: transfer weights/yolov8s.pt (default, preserves "
+                         "existing runs); scratch: random init from the arm yaml "
+                         "(paper-faithful — the paper never mentions pretraining)")
+    ap.add_argument("--data", default="data/rdd2022-cn.yaml",
+                    help="dataset descriptor (use data/rdd2022-cn-balanced.yaml "
+                         "for the augmented train split; val/test identical)")
     args = ap.parse_args()
 
     project = pathlib.Path(args.project)
+    if not project.is_absolute():
+        # Ultralytics nests relative project dirs under runs/detect/; anchor
+        # at the repo root so outputs land where epochs_done() looks.
+        project = ROOT / project
     project.mkdir(parents=True, exist_ok=True)
     script = project / "_worker.py"
     script.write_text(WORKER)
@@ -171,7 +191,7 @@ def main():
         todo.append(arm)
 
     print(f"arms to run: {len(todo)}  concurrency: {args.concurrent}  "
-          f"epochs: {args.epochs}  MemAvailable: {free_ram_gib():.1f} GiB  "
+          f"epochs: {args.epochs}  init: {args.init}  MemAvailable: {free_ram_gib():.1f} GiB  "
           f"VRAM used: {used_vram_mib()} MiB (cap {args.max_vram_mib:.0f})", flush=True)
     running = []
     started = time.time()
@@ -193,7 +213,8 @@ def main():
             proc = subprocess.Popen(
                 [INTERPRETER, str(script), arm,
                  "1" if arm in ("D_wiou", "E_all") else "0", str(project),
-                 str(args.epochs), str(args.checkpoint_every)],
+                 str(args.epochs), str(args.checkpoint_every), args.init,
+                 args.data],
                 cwd=ROOT, env=CHILD_ENV, stdout=log, stderr=subprocess.STDOUT,
             )
             running.append((arm, proc, log))

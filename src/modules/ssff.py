@@ -12,6 +12,7 @@ convolution, batch norm, LeakyReLU and a 3D max-pool over the scale axis.
 from __future__ import annotations
 
 from ultralytics.nn.modules import Conv
+from torch import nn
 
 from ..vendor.asf_yolo_blocks import ScalSeq
 
@@ -30,3 +31,7 @@ class ScaleSequenceFusion(ScalSeq):
         super().__init__(channel)
         self.conv1 = Conv(c4, channel, 1)
         self.conv2 = Conv(c5, channel, 1)
+        # Paper §2.2.2: SSFF ends in "three-dimensional convolution, batch
+        # normalization, and SiLU". The vendored ScalSeq uses LeakyReLU(0.1);
+        # override to match the paper. Vendor file stays verbatim.
+        self.act = nn.SiLU()
