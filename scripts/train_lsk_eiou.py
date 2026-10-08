@@ -1,16 +1,16 @@
-"""Train the LSK+EIoU variant (arm F_lsk_EIoU): paper-LSK model with EIoU loss.
+"""Train the LSK+EIoU variant (arm I_eiou): paper-LSK model with EIoU loss.
 
-Clone of scripts/train_lsk.py (arm F_lsk: WIoU v1 + LSK) with exactly one
+Clone of scripts/train_lsk.py (arm G_lsk: WIoU v1 + LSK) with exactly one
 experimental change: WIoU -> EIoU (plain, Focal=False). All other training
 settings are identical and must stay that way:
 
-    YAML models/yolov8s-paper-lsk.yaml, data/rdd2022-cn.yaml (5 classes),
+    YAML models/arms/yolov8s-I_eiou.yaml, data/rdd2022-cn.yaml (5 classes),
     COCO init from weights/yolov8s.pt with LSK index-shift remap (+1 for
     layer index >= 4), SGD lr0 0.01, batch 4, imgsz 640, 150 epochs.
 
 Usage:
     .venv/bin/python scripts/train_lsk_eiou.py [--epochs 150] [--data data/rdd2022-cn.yaml]
-Resumable: an existing runs/ablation-lsk/F_lsk_EIoU/weights/last.pt (or newer
+Resumable: an existing runs/ablation/I_eiou/weights/last.pt (or newer
 periodic snapshot) is resumed.
 """
 
@@ -31,10 +31,10 @@ install()
 from src.modules.eiou import install_eiou  # noqa: E402
 from ultralytics import YOLO  # noqa: E402
 
-YAML = "models/yolov8s-paper-lsk.yaml"
+YAML = "models/arms/yolov8s-I_eiou.yaml"
 COCO = "weights/yolov8s.pt"
-PROJECT = ROOT / "runs" / "ablation-lsk"
-NAME = "F_lsk_EIoU"
+PROJECT = ROOT / "runs" / "ablation"
+NAME = "I_eiou"
 SHIFT_FROM = 4  # LSK row id: stock layers >= 4 move to +1
 
 

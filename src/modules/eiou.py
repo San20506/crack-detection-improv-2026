@@ -145,7 +145,7 @@ def install_eiou(focal: bool = False, gamma: float = 0.5) -> type[BboxLoss]:
     trainer rebuilds its criterion).
 
     Args:
-        focal: ``False`` for plain EIoU (``F_lsk_EIoU`` default — clean
+        focal: ``False`` for plain EIoU (``I_eiou`` default — clean
             single-variable ablation vs WIoU); ``True`` for Focal-EIoU.
         gamma: Focal-EIoU focusing exponent (only used when focal=True).
 

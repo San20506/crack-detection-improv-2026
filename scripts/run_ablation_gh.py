@@ -1,22 +1,22 @@
-"""Train arms G_lsk and H_eiou sequentially, at the paper's exact settings.
+"""Train arms F_lsk and H_eiou sequentially, at the paper's exact settings.
 
 Same methodology as scripts/run_ablation.py (and therefore comparable with
 arms A-E): COCO init from weights/yolov8s.pt, SGD lr0 0.01, batch 4,
 imgsz 640, 150 epochs, data/rdd2022-cn.yaml, workers 2, channels_last=False.
 
 Per-arm specifics:
-    G_lsk: stock CIoU loss; the LSK row shifts backbone/neck indices >= 4 by
+    F_lsk: stock CIoU loss; the LSK row shifts backbone/neck indices >= 4 by
         +1, so COCO weights are remapped before the shape-matched copy (same
         routine as scripts/train_lsk.py) — only the LSK block starts random.
     H_eiou: yaml-identical to baseline; plain EIoU (Focal=False, matching arm
-        F_lsk_EIoU) installed via src.modules.eiou.install_eiou() before the
+        I_eiou) installed via src.modules.eiou.install_eiou() before the
         criterion is constructed, including on resume.
 
 Resumable: an arm whose weights/last.pt (or newer periodic snapshot) exists
 is resumed. A finished arm (>= epochs in results.csv) is skipped.
 
 Usage:
-    nohup .venv/bin/python scripts/run_ablation_gh.py > runs/ablation/G_H.log 2>&1 &
+    nohup .venv/bin/python scripts/run_ablation_gh.py > runs/ablation/F_H.log 2>&1 &
 """
 
 import argparse
@@ -28,7 +28,7 @@ import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RUNS = ROOT / "runs" / "ablation"
-ARMS = ["G_lsk", "H_eiou"]
+ARMS = ["F_lsk", "H_eiou"]
 
 VENV_PY = ROOT / ".venv" / "bin" / "python"
 INTERPRETER = str(VENV_PY) if VENV_PY.exists() else sys.executable
@@ -74,7 +74,7 @@ yaml_path = f"models/arms/yolov8s-{arm}.yaml"
 if resume_from:
     model = YOLO(str(resume_from))
     print(f"RESUME {arm} from {resume_from}", flush=True)
-elif arm == "G_lsk":
+elif arm == "F_lsk":
     # LSK row shifts stock layers >= 4 to +1: remap COCO keys before copying
     # so every shared layer initialises exactly as in the other arms.
     model = YOLO(yaml_path)
@@ -112,7 +112,7 @@ else:
 print("DONE", arm, flush=True)
 '''
 
-LOSS = {"G_lsk": "ciou", "H_eiou": "eiou"}
+LOSS = {"F_lsk": "ciou", "H_eiou": "eiou"}
 
 
 def epochs_done(project: pathlib.Path, arm: str) -> int:

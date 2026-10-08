@@ -1,4 +1,4 @@
-"""Train the LSK variant (arm F_lsk): paper model + LSKBlock after the P3 SPDConv.
+"""Train the LSK variant (arm G_lsk): paper model + LSKBlock after the P3 SPDConv.
 
 Same methodology as scripts/run_ablation.py so the run is comparable with the
 E_all arm: COCO init from weights/yolov8s.pt, WIoU v1, SGD lr0 0.01, batch 4,
@@ -13,7 +13,7 @@ and only the LSK block starts random.
 
 Usage:
     .venv/bin/python scripts/train_lsk.py [--epochs 150] [--data data/rdd2022-cn.yaml]
-Resumable: an existing runs/ablation-lsk/F_lsk/weights/last.pt (or newer
+Resumable: an existing runs/ablation/G_lsk/weights/last.pt (or newer
 periodic snapshot) is resumed.
 """
 
@@ -34,10 +34,10 @@ install()
 from src.modules.wiou import install_wiou  # noqa: E402
 from ultralytics import YOLO  # noqa: E402
 
-YAML = "models/yolov8s-paper-lsk.yaml"
+YAML = "models/arms/yolov8s-G_lsk.yaml"
 COCO = "weights/yolov8s.pt"
-PROJECT = ROOT / "runs" / "ablation-lsk"
-NAME = "F_lsk"
+PROJECT = ROOT / "runs" / "ablation"
+NAME = "G_lsk"
 SHIFT_FROM = 4  # LSK row id: stock layers >= 4 move to +1
 
 

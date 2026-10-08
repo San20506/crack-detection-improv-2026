@@ -32,7 +32,8 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RUNS = ROOT / "runs" / "ablation"
 OUT = ROOT / "runs" / "eval"
-ARMS = ["baseline", "A_spd", "B_neck", "C_faster", "D_wiou", "E_all"]
+ARMS = ["baseline", "A_spd", "B_neck", "C_faster", "D_wiou", "E_all",
+        "F_lsk", "G_lsk", "H_eiou", "I_eiou"]
 DATA = "data/rdd2022-cn.yaml"
 IMGSZ = 640
 

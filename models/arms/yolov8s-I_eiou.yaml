@@ -1,18 +1,7 @@
-# YOLOv8s-paper + LSK (experimental arm F_lsk, new file -- paper yaml untouched).
-#
-# Clone of models/yolov8s-paper.yaml (Sun et al. 2024: SPD-Conv backbone,
-# ASF-YOLO neck with Add, C2f_Faster, WIoU via install_wiou) plus ONE inserted
-# row: a Large Selective Kernel stage block right after the P3 SPDConv:
-#   SPDConv-3 (P3/8) -> LSKBlock -> C2f_Faster (backbone P3)
-# The LSK output therefore flows into the ASF neck through the backbone P3
-# feature, i.e. the three neck taps that used to read layer 4 now read layer 5.
-# Reference: Li et al., "Large Selective Kernel Network for Remote Sensing
-# Object Detection" (ICCV 2023) / "LSKNet" (IJCV 2024).
-# Implementation: src/modules/lsk.py:LSKBlock (clean-room, no mmcv/timm deps).
-#
-# Change vs the paper yaml: exactly one inserted backbone row (new id 4) and a
-# mechanical +1 renumber of every downstream `from` index >= 4. Channel widths,
-# strides, and the neck/Detect topology are otherwise identical.
+# Arm I_eiou: paper + LSK arch (identical to yolov8s-G_lsk.yaml) + EIoU loss only.
+# Yaml is arch-identical to G_lsk; the loss is swapped code-side via
+# src.modules.eiou.install_eiou() (same convention as D_wiou / H_eiou).
+# Created 2026-10-07 from G_lsk (user scheme: I = G + EIoU).
 
 # Parameters
 nc: 80 # number of classes (overridden by the dataset yaml at train time)

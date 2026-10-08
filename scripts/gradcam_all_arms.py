@@ -1,7 +1,7 @@
 """Grad-CAM overlays for every trained ablation arm.
 
 Runs the same test images through each arm's ``best.pt``, explains the
-shared SPPF backbone-exit layer (index 9 in all six arm yamls) with
+shared SPPF backbone-exit layer (index 9 in non-LSK arms) with
 :mod:`src.explain.gradcam`, and writes:
 
 - ``runs/gradcam/<arm>/<stem>_overlay.jpg`` — heat + predicted boxes
@@ -28,7 +28,8 @@ os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-ARMS = ["baseline", "A_spd", "B_neck", "C_faster", "D_wiou", "E_all"]
+ARMS = ["baseline", "A_spd", "B_neck", "C_faster", "D_wiou", "E_all",
+        "F_lsk", "G_lsk", "H_eiou", "I_eiou"]
 
 
 def parse_args():
@@ -37,6 +38,10 @@ def parse_args():
                     help="subset of arms to explain")
     ap.add_argument("--runs-dir", default=str(ROOT / "runs" / "ablation"),
                     help="project dir holding <arm>/weights/best.pt")
+    ap.add_argument("--arm-paths", nargs="*", default=None, metavar="LABEL=DIR",
+                    help="override the checkpoint dir for an arm, e.g. "
+                         "F_lsk=runs/ablation/F_lsk G_lsk=runs/ablation-lsk/F_lsk "
+                         "(DIR must contain weights/best.pt)")
     ap.add_argument("--images", nargs="*", default=None,
                     help="explicit image paths (overrides --num-images sampling)")
     ap.add_argument("--test-dir", default=str(ROOT / "data" / "rdd2022-cn" / "images" / "test"),
@@ -103,8 +108,8 @@ def layer_tag(layers: list[int], layer_types: dict[int, str]) -> str:
 def auto_sppf(det_model) -> list[int]:
     """Default target: the last SPPF layer (backbone exit).
 
-    Index 9 in the A-E/G/H arms, 10 in the LSK arms (F_lsk, F_lsk_EIoU,
-    G_lsk) where the inserted LSKBlock shifts everything downstream by +1.
+    Index 9 in the A-E/H arms, 10 in the LSK arms (F_lsk, G_lsk,
+    I_eiou) where the inserted LSKBlock shifts everything downstream by +1.
     """
     sppfs = [i for i, mod in enumerate(det_model.model)
              if type(mod).__name__ == "SPPF"]
@@ -143,14 +148,23 @@ def main():
 
     layer_types: dict[int, str] = {}
     arm_layers: dict[str, list[int]] = {}
+    ckpt_src: dict[str, str] = {}
+    overrides = {}
+    for item in args.arm_paths or []:
+        label, _, path = item.partition("=")
+        if not label or not path:
+            raise ValueError(f"bad --arm-paths entry {item!r}, want LABEL=DIR")
+        overrides[label] = pathlib.Path(path)
     for arm in args.arms:
-        ckpt = pathlib.Path(args.runs_dir) / arm / "weights" / "best.pt"
+        ckpt = (overrides.get(arm, pathlib.Path(args.runs_dir) / arm)
+                / "weights" / "best.pt")
         assert ckpt.exists(), f"missing {ckpt} — train {arm} first"
         print(f"[{arm}] loading {ckpt}", flush=True)
         yolo = YOLO(str(ckpt))
         det = yolo.model.eval()
         layers = resolve_target_layers(det, args.layers or auto_sppf(det))
         arm_layers[arm] = layers
+        ckpt_src[arm] = str(ckpt)
         dev = next(det.parameters()).device
         for i in layers:
             layer_types.setdefault(i, type(det.model[i]).__name__)
@@ -213,7 +227,8 @@ def main():
 
     (out_dir / "GRADCAM.md").write_text(
         "# Grad-CAM — all trained arms\n\n"
-        + "".join(f"- {arm}: layer(s) {layer_tag(ls, layer_types)}\n"
+        + "".join(f"- {arm}: layer(s) {layer_tag(ls, layer_types)} "
+                  f"from `{ckpt_src[arm]}`\n"
                   for arm, ls in arm_layers.items())
         + "\nThe default target is each arm's SPPF backbone exit (index 9, "
         "or 10 where an inserted LSKBlock shifts it), so heatmaps stay "
