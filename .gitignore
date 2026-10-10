@@ -10,6 +10,8 @@ __pycache__/
 *.onnx
 *.engine
 !weights/.gitkeep
+# Exception: the cloud-demo checkpoint ships with the Streamlit/HF Space app
+!space/weights/*.pt
 
 # Ultralytics dataset cache files
 *.cache

@@ -163,6 +163,26 @@ Three other details the full text fixed, two of which had been guessed:
   −14.8%, within 2.8 points, and is a genuine FasterNet stage-2-to-4 block. The
   code keeps the 3x3 and this note records the conflict.
 
+## Cloud demo (public testing)
+
+`space/` is a self-contained cloud app serving the proposed model
+(`space/weights/F_lsk_proposed.pt`, paper arch + LSKBlock, 5 classes) on CPU —
+upload a road photo, get boxes for D00 / D10 / D20 / D40 / Repair.
+
+- `space/streamlit_app.py` — Streamlit front end. Deploys free on
+  [Streamlit Community Cloud](https://share.streamlit.io): repo
+  `San20506/crack-detection-improv-2026`, branch `main`,
+  entrypoint `space/streamlit_app.py` (its `space/requirements.txt` takes
+  precedence over the root training env and installs CPU-only torch).
+- `space/app.py` — Gradio front end for HuggingFace Spaces (kept for future
+  use; Gradio Spaces currently need a PRO subscription).
+- `space/src/` is a copy of the `src/model`, `src/modules`, `src/vendor`
+  packages the checkpoint needs (`install()` before `YOLO(...)`); `space/examples/`
+  holds sample test images.
+
+Verified locally before shipping: CPU inference on a sample image, Streamlit
+boot (`/_stcore/health` 200) and a headless `AppTest` script run with no exceptions.
+
 ## Reference implementations (verified, vendored)
 
 Each of the four changes has a public reference implementation. All four repos
